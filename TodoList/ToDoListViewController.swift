@@ -11,7 +11,7 @@ import UIKit
 class ToToListViewController: UITableViewController {
 
     
-    let itemArray = ["Find Mike", "Buy Eggos", "Destroy Demagorgon"]
+    var itemArray = [String]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -46,6 +46,27 @@ class ToToListViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true) // makes it flash gray when clicked then return to white
         
     }
+    // MARK - Add New Items
+    
+    @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
+        
+        var textField = UITextField()
+        
+        let alert = UIAlertController(title: "Add New Item", message: "", preferredStyle: .alert)
+        let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
+            //what happens when user clicks "Add Item" alert
+            print(textField.text)
+            self.itemArray.append(textField.text!)
+            self.tableView.reloadData()
+        }
+        alert.addTextField { (alertTextField) in
+            alertTextField.placeholder = "Create new item"
+            textField = alertTextField
+        }
+        alert.addAction(action)
+        present(alert, animated: true, completion: nil)
+    }
+    
 
 
 }
