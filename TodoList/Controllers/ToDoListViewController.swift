@@ -11,16 +11,17 @@ import UIKit
 class ToToListViewController: UITableViewController {
 
     
-    var itemArray = [String]()
+    var itemArray = [Item]()
     
     let defaults = UserDefaults.standard
     
-    
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.pList")
+   
     override func viewDidLoad() {
         super.viewDidLoad()
-        if let items = defaults.array(forKey: "ToDoListArray") as? [String]{
-            itemArray = items
-        }
+        print(dataFilePath)
+        loadItems()
+
         // Do any additional setup after loading the view, typically from a nib.
     }
 
@@ -32,8 +33,17 @@ class ToToListViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        let item = itemArray[indexPath.row]
         
-        cell.textLabel?.text = itemArray[indexPath.row]
+        cell.textLabel?.text = item.title
+        
+//        if item.done == true {
+//            cell.accessoryType = .checkmark
+//        }else{
+//            cell.accessoryType = .none
+//        }
+        
+        cell.accessoryType = item.done == true ? .checkmark : .none // this is the same as the above commented out code
         
         return cell
     }
@@ -41,15 +51,12 @@ class ToToListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         //print(itemArray[indexPath.row])
         
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-            
-        }else{
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
+        saveItems()
+       
         
-        tableView.deselectRow(at: indexPath, animated: true) // makes it flash gray when clicked then return to white
+       tableView.deselectRow(at: indexPath, animated: true) // makes it flash gray when clicked then return to white
         
     }
     // MARK - Add New Items
@@ -61,10 +68,13 @@ class ToToListViewController: UITableViewController {
         let alert = UIAlertController(title: "Add New Item", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             //what happens when user clicks "Add Item" alert
-            print(textField.text)
-            self.itemArray.append(textField.text!)
-            self.defaults.set(self.itemArray, forKey: "ToDoListArray")
-            self.tableView.reloadData()
+            // print(textField.text)
+            let newItem = Item()
+            newItem.title = textField.text!
+            self.itemArray.append(newItem)
+            
+            self.saveItems()
+           
         }
         alert.addTextField { (alertTextField) in
             alertTextField.placeholder = "Create new item"
@@ -74,7 +84,31 @@ class ToToListViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
-
+    func saveItems () {
+        
+        let encoder = PropertyListEncoder()
+        
+        do {
+            
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        }catch{
+            print("Error encoding item array. \(error)")
+        }
+        
+        tableView.reloadData()
+    }
+    
+    func loadItems(){
+        if let data = try? Data(contentsOf: dataFilePath!){
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            }catch{
+                print(error)
+            }
+        }
+    }
 
 }
 
